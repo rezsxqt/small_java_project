@@ -101,7 +101,6 @@ public class LoginPage extends JFrame {
         mainPanel.add(rightPanel);
 
         add(mainPanel);
-        setVisible(true);
     }
 
     private void handleLogin() {
