@@ -1,388 +1,421 @@
 import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.image.BufferedImage;
+import java.awt.event.*;
 import java.io.*;
 import java.sql.*;
-import javax.imageio.ImageIO;
-import icons.UITheme;
+import java.nio.file.*;
 
 public class DashboardPage extends JFrame {
-
-    private String currentEmail;
+    private int userId;
     private JLabel photoLabel;
-    private String photoPath = null;
+    private JLabel firstnameDisplay, lastnameDisplay, phoneDisplay, emailDisplay, usernameDisplay;
+    private String currentPhotoPath = null;
 
-    public DashboardPage(String userEmail) {
-        this.currentEmail = userEmail;
+    public DashboardPage(int userId) {
+        this.userId = userId;
 
         setTitle("Dashboard");
-        setSize(1000, 600);
+        setSize(900, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setResizable(false);
 
-        // Sidebar
-        JPanel sidebar = new JPanel();
-        sidebar.setBackground(new Color(45, 62, 80));
-        sidebar.setPreferredSize(new Dimension(200, 0));
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        // Main panel with GridLayout for two panels
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2));
 
-        JLabel logo = new JLabel("MyApp");
-        logo.setForeground(Color.WHITE);
-        logo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Left Panel - Profile Section
+        JPanel leftPanel = new JPanel();
+        leftPanel.setBackground(new Color(52, 152, 219));
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
 
-        JButton editProfile = UITheme.styledButton("Edit Profile");
-        editProfile.setAlignmentX(Component.CENTER_ALIGNMENT);
-        editProfile.addActionListener(e -> showEditProfile());
+        leftPanel.add(Box.createVerticalStrut(80));
 
-        JButton logout = UITheme.styledButton("Logout");
-        logout.setBackground(UITheme.danger);
-        logout.setAlignmentX(Component.CENTER_ALIGNMENT);
-        logout.addActionListener(e -> {
-            dispose();
-            new LoginPage();
-        });
-
-        sidebar.add(Box.createVerticalStrut(20));
-        sidebar.add(logo);
-        sidebar.add(Box.createVerticalStrut(30));
-        sidebar.add(editProfile);
-        sidebar.add(Box.createVerticalGlue());
-        sidebar.add(logout);
-        sidebar.add(Box.createVerticalStrut(20));
-
-        // Main content
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setBackground(UITheme.bgColor);
-
-        JLabel welcome = new JLabel("Welcome, " + getUserName() + " 👋");
-        welcome.setFont(UITheme.titleFont);
-
-        content.add(welcome);
-
-        add(sidebar, BorderLayout.WEST);
-        add(content, BorderLayout.CENTER);
-
-        setVisible(true);
-    }
-
-    String getUserName() {
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT firstname FROM users WHERE email=?"
-            );
-            ps.setString(1, currentEmail);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getString("firstname");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "User";
-    }
-
-    void showEditProfile() {
-        JDialog dialog = new JDialog(this, "Edit Profile", true);
-        dialog.setSize(600, 700);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new BorderLayout());
-
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        mainPanel.setBackground(Color.WHITE);
-
-        // Photo section
-        JPanel photoPanel = new JPanel();
-        photoPanel.setLayout(new BoxLayout(photoPanel, BoxLayout.Y_AXIS));
-        photoPanel.setBackground(Color.WHITE);
-        photoPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-
+        // Photo display
         photoLabel = new JLabel();
         photoLabel.setPreferredSize(new Dimension(150, 150));
-        photoLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
-        photoLabel.setHorizontalAlignment(JLabel.CENTER);
+        photoLabel.setMaximumSize(new Dimension(150, 150));
         photoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        photoLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
+        photoLabel.setOpaque(true);
+        photoLabel.setBackground(Color.WHITE);
+        photoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        leftPanel.add(photoLabel);
 
-        loadUserPhoto();
+        leftPanel.add(Box.createVerticalStrut(20));
 
-        JButton uploadPhoto = new JButton("Upload Photo");
-        uploadPhoto.setAlignmentX(Component.CENTER_ALIGNMENT);
-        uploadPhoto.addActionListener(e -> {
-            uploadPhoto();
-            updatePhotoInDB();
-        });
+        JLabel profileLabel = new JLabel("User Profile");
+        profileLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        profileLabel.setForeground(Color.WHITE);
+        profileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        leftPanel.add(profileLabel);
 
-        photoPanel.add(photoLabel);
-        photoPanel.add(Box.createVerticalStrut(10));
-        photoPanel.add(uploadPhoto);
+        // Right Panel - Details Section
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setLayout(null);
 
-        // Form fields with individual edit buttons
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        JLabel titleLabel = new JLabel("Dashboard");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        titleLabel.setBounds(150, 40, 200, 40);
+        rightPanel.add(titleLabel);
 
-        // Load current user data
-        String[] userData = new String[5];
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT firstname, lastname, username, email, password FROM users WHERE email=?"
-            );
-            ps.setString(1, currentEmail);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                userData[0] = rs.getString("firstname");
-                userData[1] = rs.getString("lastname");
-                userData[2] = rs.getString("username");
-                userData[3] = rs.getString("email");
-                userData[4] = rs.getString("password");
+        // Display fields
+        int yPos = 120;
+
+        JLabel fnLabel = new JLabel("First Name:");
+        fnLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        fnLabel.setBounds(50, yPos, 120, 25);
+        rightPanel.add(fnLabel);
+
+        firstnameDisplay = new JLabel();
+        firstnameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
+        firstnameDisplay.setBounds(170, yPos, 250, 25);
+        rightPanel.add(firstnameDisplay);
+
+        yPos += 40;
+
+        JLabel lnLabel = new JLabel("Last Name:");
+        lnLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        lnLabel.setBounds(50, yPos, 120, 25);
+        rightPanel.add(lnLabel);
+
+        lastnameDisplay = new JLabel();
+        lastnameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
+        lastnameDisplay.setBounds(170, yPos, 250, 25);
+        rightPanel.add(lastnameDisplay);
+
+        yPos += 40;
+
+        JLabel phLabel = new JLabel("Phone:");
+        phLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        phLabel.setBounds(50, yPos, 120, 25);
+        rightPanel.add(phLabel);
+
+        phoneDisplay = new JLabel();
+        phoneDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
+        phoneDisplay.setBounds(170, yPos, 250, 25);
+        rightPanel.add(phoneDisplay);
+
+        yPos += 40;
+
+        JLabel emLabel = new JLabel("Email:");
+        emLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        emLabel.setBounds(50, yPos, 120, 25);
+        rightPanel.add(emLabel);
+
+        emailDisplay = new JLabel();
+        emailDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
+        emailDisplay.setBounds(170, yPos, 250, 25);
+        rightPanel.add(emailDisplay);
+
+        yPos += 40;
+
+        JLabel unLabel = new JLabel("Username:");
+        unLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        unLabel.setBounds(50, yPos, 120, 25);
+        rightPanel.add(unLabel);
+
+        usernameDisplay = new JLabel();
+        usernameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
+        usernameDisplay.setBounds(170, yPos, 250, 25);
+        rightPanel.add(usernameDisplay);
+
+        // Buttons
+        JButton editButton = new JButton("Edit Details");
+        editButton.setFont(new Font("Arial", Font.BOLD, 14));
+        editButton.setBounds(50, 400, 160, 35);
+        editButton.setBackground(new Color(52, 152, 219));
+        editButton.setForeground(Color.WHITE);
+        editButton.setFocusPainted(false);
+        editButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                openEditDialog();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
+        rightPanel.add(editButton);
 
-        formPanel.add(createEditableField("First Name", userData[0], "firstname"));
-        formPanel.add(Box.createVerticalStrut(10));
-        formPanel.add(createEditableField("Last Name", userData[1], "lastname"));
-        formPanel.add(Box.createVerticalStrut(10));
-        formPanel.add(createEditableField("Username", userData[2], "username"));
-        formPanel.add(Box.createVerticalStrut(10));
-        formPanel.add(createEditableField("Email", userData[3], "email"));
-        formPanel.add(Box.createVerticalStrut(10));
-        formPanel.add(createPasswordField("Password", userData[4]));
+        JButton deleteButton = new JButton("Delete Account");
+        deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
+        deleteButton.setBounds(240, 400, 160, 35);
+        deleteButton.setBackground(new Color(231, 76, 60));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+        deleteButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                deleteAccount();
+            }
+        });
+        rightPanel.add(deleteButton);
 
-        // Close button
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setBackground(Color.WHITE);
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 14));
+        logoutButton.setBounds(145, 455, 160, 35);
+        logoutButton.setBackground(new Color(149, 165, 166));
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                logout();
+            }
+        });
+        rightPanel.add(logoutButton);
 
-        JButton closeBtn = new JButton("Close");
-        closeBtn.setBackground(Color.LIGHT_GRAY);
-        closeBtn.addActionListener(e -> dialog.dispose());
+        mainPanel.add(leftPanel);
+        mainPanel.add(rightPanel);
 
-        buttonPanel.add(closeBtn);
+        add(mainPanel);
 
-        mainPanel.add(photoPanel);
-        mainPanel.add(formPanel);
-        mainPanel.add(buttonPanel);
-
-        JScrollPane scrollPane = new JScrollPane(mainPanel);
-        scrollPane.setBorder(null);
-        dialog.add(scrollPane, BorderLayout.CENTER);
-
-        dialog.setVisible(true);
+        // Load user data
+        loadUserData();
     }
 
-    JPanel createEditableField(String label, String currentValue, String fieldName) {
-        JPanel panel = new JPanel(new BorderLayout(10, 0));
-        panel.setBackground(Color.WHITE);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+    private void loadUserData() {
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = "SELECT * FROM users WHERE id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setInt(1, userId);
 
-        JLabel lblField = new JLabel(label + ":");
-        lblField.setPreferredSize(new Dimension(120, 30));
+            ResultSet rs = pstmt.executeQuery();
 
-        JTextField txtField = new JTextField(currentValue);
-        txtField.setEditable(false);
-        txtField.setBackground(Color.WHITE);
+            if (rs.next()) {
+                firstnameDisplay.setText(rs.getString("firstname"));
+                lastnameDisplay.setText(rs.getString("lastname"));
+                phoneDisplay.setText(rs.getString("phone"));
+                emailDisplay.setText(rs.getString("email"));
+                usernameDisplay.setText(rs.getString("username"));
+                currentPhotoPath = rs.getString("photo");
 
-        JButton btnEdit = new JButton("Edit");
-        btnEdit.setPreferredSize(new Dimension(70, 30));
-
-        btnEdit.addActionListener(e -> {
-            if (btnEdit.getText().equals("Edit")) {
-                txtField.setEditable(true);
-                txtField.setBackground(Color.WHITE);
-                txtField.requestFocus();
-                btnEdit.setText("Save");
-            } else {
-                String newValue = txtField.getText().trim();
-                if (newValue.isEmpty()) {
-                    JOptionPane.showMessageDialog(panel, label + " cannot be empty");
-                    txtField.setText(currentValue);
-                    return;
-                }
-
-                if (updateField(fieldName, newValue)) {
-                    txtField.setEditable(false);
-                    txtField.setBackground(Color.WHITE);
-                    btnEdit.setText("Edit");
-
-                    if (fieldName.equals("email")) {
-                        currentEmail = newValue;
+                // Load photo if exists
+                if (currentPhotoPath != null && !currentPhotoPath.isEmpty()) {
+                    File photoFile = new File(currentPhotoPath);
+                    if (photoFile.exists()) {
+                        ImageIcon icon = new ImageIcon(currentPhotoPath);
+                        Image image = icon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                        photoLabel.setIcon(new ImageIcon(image));
+                    } else {
+                        photoLabel.setText("No Photo");
                     }
-
-                    JOptionPane.showMessageDialog(panel, label + " updated successfully!");
-
-                    // Refresh dashboard
-                    SwingUtilities.getWindowAncestor(panel).dispose();
-                    dispose();
-                    new DashboardPage(currentEmail);
                 } else {
-                    txtField.setText(currentValue);
-                    btnEdit.setText("Edit");
+                    photoLabel.setText("No Photo");
                 }
             }
-        });
-
-        panel.add(lblField, BorderLayout.WEST);
-        panel.add(txtField, BorderLayout.CENTER);
-        panel.add(btnEdit, BorderLayout.EAST);
-
-        return panel;
-    }
-
-    JPanel createPasswordField(String label, String currentPassword) {
-        JPanel panel = new JPanel(new BorderLayout(10, 0));
-        panel.setBackground(Color.WHITE);
-        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-
-        JLabel lblField = new JLabel(label + ":");
-        lblField.setPreferredSize(new Dimension(120, 30));
-
-        JPasswordField txtField = new JPasswordField("••••••••");
-        txtField.setEditable(false);
-        txtField.setBackground(Color.WHITE);
-
-        JButton btnEdit = new JButton("Change");
-        btnEdit.setPreferredSize(new Dimension(70, 30));
-
-        btnEdit.addActionListener(e -> {
-            JPanel passPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-            JPasswordField newPass = new JPasswordField();
-            JPasswordField confirmPass = new JPasswordField();
-
-            passPanel.add(new JLabel("New Password:"));
-            passPanel.add(newPass);
-            passPanel.add(new JLabel("Confirm Password:"));
-            passPanel.add(confirmPass);
-
-            int result = JOptionPane.showConfirmDialog(panel, passPanel,
-                    "Change Password", JOptionPane.OK_CANCEL_OPTION);
-
-            if (result == JOptionPane.OK_OPTION) {
-                String newPassword = String.valueOf(newPass.getPassword());
-                String confirmPassword = String.valueOf(confirmPass.getPassword());
-
-                if (newPassword.isEmpty()) {
-                    JOptionPane.showMessageDialog(panel, "Password cannot be empty");
-                    return;
-                }
-
-                if (!newPassword.equals(confirmPassword)) {
-                    JOptionPane.showMessageDialog(panel, "Passwords do not match");
-                    return;
-                }
-
-                if (updateField("password", newPassword)) {
-                    JOptionPane.showMessageDialog(panel, "Password updated successfully!");
-                }
-            }
-        });
-
-        panel.add(lblField, BorderLayout.WEST);
-        panel.add(txtField, BorderLayout.CENTER);
-        panel.add(btnEdit, BorderLayout.EAST);
-
-        return panel;
-    }
-
-    boolean updateField(String fieldName, String newValue) {
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "UPDATE users SET " + fieldName + "=? WHERE email=?"
-            );
-            ps.setString(1, newValue);
-            ps.setString(2, currentEmail);
-            ps.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            if (e.getMessage().contains("Duplicate entry")) {
-                JOptionPane.showMessageDialog(this, "This " + fieldName + " already exists");
-            } else {
-                JOptionPane.showMessageDialog(this, "Error updating " + fieldName);
-            }
-            e.printStackTrace();
-            return false;
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error updating " + fieldName);
-            e.printStackTrace();
-            return false;
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading user data: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    void loadUserPhoto() {
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT photo FROM users WHERE email=?"
-            );
-            ps.setString(1, currentEmail);
-            ResultSet rs = ps.executeQuery();
+    private void openEditDialog() {
+        JDialog editDialog = new JDialog(this, "Edit Details", true);
+        editDialog.setSize(500, 600);
+        editDialog.setLocationRelativeTo(this);
+        editDialog.setLayout(null);
 
-            if (rs.next()) {
-                String path = rs.getString("photo");
-                if (path != null && !path.isEmpty()) {
-                    File imgFile = new File(path);
-                    if (imgFile.exists()) {
-                        BufferedImage img = ImageIO.read(imgFile);
-                        Image scaledImg = img.getScaledInstance(150, 150, Image.SCALE_SMOOTH);
-                        photoLabel.setIcon(new ImageIcon(scaledImg));
-                        photoPath = path;
-                        return;
+        JLabel titleLabel = new JLabel("Edit Your Details");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setBounds(150, 20, 200, 30);
+        editDialog.add(titleLabel);
+
+        int yPos = 70;
+
+        JLabel fnLabel = new JLabel("First Name:");
+        fnLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(fnLabel);
+
+        JTextField fnField = new JTextField(firstnameDisplay.getText());
+        fnField.setBounds(150, yPos, 300, 30);
+        editDialog.add(fnField);
+
+        yPos += 50;
+
+        JLabel lnLabel = new JLabel("Last Name:");
+        lnLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(lnLabel);
+
+        JTextField lnField = new JTextField(lastnameDisplay.getText());
+        lnField.setBounds(150, yPos, 300, 30);
+        editDialog.add(lnField);
+
+        yPos += 50;
+
+        JLabel phLabel = new JLabel("Phone:");
+        phLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(phLabel);
+
+        JTextField phField = new JTextField(phoneDisplay.getText());
+        phField.setBounds(150, yPos, 300, 30);
+        editDialog.add(phField);
+
+        yPos += 50;
+
+        JLabel emLabel = new JLabel("Email:");
+        emLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(emLabel);
+
+        JTextField emField = new JTextField(emailDisplay.getText());
+        emField.setBounds(150, yPos, 300, 30);
+        editDialog.add(emField);
+
+        yPos += 50;
+
+        JLabel unLabel = new JLabel("Username:");
+        unLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(unLabel);
+
+        JTextField unField = new JTextField(usernameDisplay.getText());
+        unField.setBounds(150, yPos, 300, 30);
+        editDialog.add(unField);
+
+        yPos += 50;
+
+        JLabel pwLabel = new JLabel("Password:");
+        pwLabel.setBounds(50, yPos, 100, 25);
+        editDialog.add(pwLabel);
+
+        JPasswordField pwField = new JPasswordField();
+        pwField.setBounds(150, yPos, 300, 30);
+        editDialog.add(pwField);
+
+        yPos += 50;
+
+        JLabel photoPathLabel = new JLabel("Photo: Not selected");
+        photoPathLabel.setBounds(150, yPos, 300, 25);
+        editDialog.add(photoPathLabel);
+
+        final String[] selectedPhotoPath = {null};
+
+        JButton selectPhotoButton = new JButton("Select Photo");
+        selectPhotoButton.setBounds(50, yPos, 120, 30);
+        selectPhotoButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                        "Image files", "jpg", "jpeg", "png", "gif"));
+                int result = fileChooser.showOpenDialog(editDialog);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    selectedPhotoPath[0] = fileChooser.getSelectedFile().getAbsolutePath();
+                    photoPathLabel.setText("Photo: " + fileChooser.getSelectedFile().getName());
+                }
+            }
+        });
+        editDialog.add(selectPhotoButton);
+
+        yPos += 60;
+
+        JButton saveButton = new JButton("Save Changes");
+        saveButton.setBounds(100, yPos, 140, 35);
+        saveButton.setBackground(new Color(52, 152, 219));
+        saveButton.setForeground(Color.WHITE);
+        saveButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String firstname = fnField.getText().trim();
+                String lastname = lnField.getText().trim();
+                String phone = phField.getText().trim();
+                String email = emField.getText().trim();
+                String username = unField.getText().trim();
+                String password = new String(pwField.getPassword());
+
+                if (firstname.isEmpty() || lastname.isEmpty() || email.isEmpty() || username.isEmpty()) {
+                    JOptionPane.showMessageDialog(editDialog, "Please fill in all required fields!",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                try (Connection conn = DBConnection.getConnection()) {
+                    String query;
+                    PreparedStatement pstmt;
+
+                    if (password.isEmpty()) {
+                        // Update without password
+                        query = "UPDATE users SET firstname=?, lastname=?, phone=?, email=?, username=?, photo=? WHERE id=?";
+                        pstmt = conn.prepareStatement(query);
+                        pstmt.setString(1, firstname);
+                        pstmt.setString(2, lastname);
+                        pstmt.setString(3, phone);
+                        pstmt.setString(4, email);
+                        pstmt.setString(5, username);
+                        pstmt.setString(6, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : currentPhotoPath);
+                        pstmt.setInt(7, userId);
+                    } else {
+                        // Update with password
+                        query = "UPDATE users SET firstname=?, lastname=?, phone=?, email=?, username=?, password=?, photo=? WHERE id=?";
+                        pstmt = conn.prepareStatement(query);
+                        pstmt.setString(1, firstname);
+                        pstmt.setString(2, lastname);
+                        pstmt.setString(3, phone);
+                        pstmt.setString(4, email);
+                        pstmt.setString(5, username);
+                        pstmt.setString(6, password);
+                        pstmt.setString(7, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : currentPhotoPath);
+                        pstmt.setInt(8, userId);
                     }
+
+                    int result = pstmt.executeUpdate();
+
+                    if (result > 0) {
+                        JOptionPane.showMessageDialog(editDialog, "Details updated successfully!",
+                                "Success", JOptionPane.INFORMATION_MESSAGE);
+                        loadUserData();
+                        editDialog.dispose();
+                    }
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(editDialog, "Error updating details: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
+        editDialog.add(saveButton);
 
-        photoLabel.setText("No Photo");
-        photoLabel.setIcon(null);
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.setBounds(260, yPos, 140, 35);
+        cancelButton.setBackground(new Color(149, 165, 166));
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                editDialog.dispose();
+            }
+        });
+        editDialog.add(cancelButton);
+
+        editDialog.setVisible(true);
     }
 
-    void uploadPhoto() {
-        JFileChooser fileChooser = new JFileChooser();
-        FileNameExtensionFilter filter = new FileNameExtensionFilter(
-                "Image files", "jpg", "jpeg", "png", "gif"
-        );
-        fileChooser.setFileFilter(filter);
+    private void deleteAccount() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete your account? This action cannot be undone!",
+                "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            try {
-                BufferedImage img = ImageIO.read(selectedFile);
-                Image scaledImg = img.getScaledInstance(150, 150, Image.SCALE_SMOOTH);
-                photoLabel.setIcon(new ImageIcon(scaledImg));
-                photoLabel.setText("");
-                photoPath = selectedFile.getAbsolutePath();
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Error loading image");
-                e.printStackTrace();
+        if (confirm == JOptionPane.YES_OPTION) {
+            try (Connection conn = DBConnection.getConnection()) {
+                String query = "DELETE FROM users WHERE id = ?";
+                PreparedStatement pstmt = conn.prepareStatement(query);
+                pstmt.setInt(1, userId);
+
+                int result = pstmt.executeUpdate();
+
+                if (result > 0) {
+                    JOptionPane.showMessageDialog(this, "Account deleted successfully!",
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                    new LoginPage().setVisible(true);
+                    dispose();
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error deleting account: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    void updatePhotoInDB() {
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "UPDATE users SET photo=? WHERE email=?"
-            );
-            ps.setString(1, photoPath);
-            ps.setString(2, currentEmail);
-            ps.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Photo updated successfully!");
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error updating photo");
-            e.printStackTrace();
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?",
+                "Confirm Logout", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            new LoginPage().setVisible(true);
+            dispose();
         }
     }
 }

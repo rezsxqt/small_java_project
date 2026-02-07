@@ -1,115 +1,234 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.sql.*;
-import icons.UITheme;
-public class RegisterPage extends JFrame {
 
-    JTextField fName, lName, phone, email, user;
-    JPasswordField pass, confirm;
+public class RegisterPage extends JFrame {
+    private JTextField firstnameField, lastnameField, phoneField, emailField, usernameField;
+    private JPasswordField passwordField, confirmPasswordField;
+    private JButton registerButton;
+    private JLabel loginLabel;
 
     public RegisterPage() {
         setTitle("Register");
-        setSize(780, 520);
+        setSize(900, 650);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setResizable(false);
 
-        JPanel left = new JPanel();
-        left.setBackground(UITheme.primary);
-        left.setPreferredSize(new Dimension(300, 0));
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        // Main panel with GridLayout for two panels
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2));
 
-        JLabel title = new JLabel("Join MyApp");
-        title.setForeground(Color.WHITE);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Left Panel - Welcome Section
+        JPanel leftPanel = new JPanel();
+        leftPanel.setBackground(new Color(46, 204, 113));
+        leftPanel.setLayout(new GridBagLayout());
 
-        left.add(Box.createVerticalGlue());
-        left.add(title);
-        left.add(Box.createVerticalGlue());
+        JLabel welcomeLabel = new JLabel("<html><center>Join Us<br>Today!</center></html>");
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        welcomeLabel.setForeground(Color.WHITE);
 
-        JPanel right = new JPanel(new GridBagLayout());
-        right.setBackground(UITheme.bgColor);
+        leftPanel.add(welcomeLabel);
 
-        JPanel card = new JPanel(new GridLayout(8, 2, 10, 10));
-        card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(380, 400));
-        card.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        // Right Panel - Form Section
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setLayout(null);
 
-        fName = new JTextField();
-        lName = new JTextField();
-        phone = new JTextField();
-        email = new JTextField();
-        user = new JTextField();
-        pass = new JPasswordField();
-        confirm = new JPasswordField();
+        JLabel titleLabel = new JLabel("Register");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        titleLabel.setBounds(150, 30, 200, 40);
+        rightPanel.add(titleLabel);
 
-        JButton register = UITheme.styledButton("Create Account");
-        JButton back = link("Back to Login");
+        // First Name
+        JLabel firstnameLabel = new JLabel("First Name:");
+        firstnameLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        firstnameLabel.setBounds(50, 90, 100, 20);
+        rightPanel.add(firstnameLabel);
 
-        register.addActionListener(e -> register());
-        back.addActionListener(e -> {
-            dispose();
-            new LoginPage();
+        firstnameField = new JTextField();
+        firstnameField.setFont(new Font("Arial", Font.PLAIN, 12));
+        firstnameField.setBounds(50, 112, 350, 30);
+        firstnameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(firstnameField);
+
+        // Last Name
+        JLabel lastnameLabel = new JLabel("Last Name:");
+        lastnameLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        lastnameLabel.setBounds(50, 150, 100, 20);
+        rightPanel.add(lastnameLabel);
+
+        lastnameField = new JTextField();
+        lastnameField.setFont(new Font("Arial", Font.PLAIN, 12));
+        lastnameField.setBounds(50, 172, 350, 30);
+        lastnameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(lastnameField);
+
+        // Phone
+        JLabel phoneLabel = new JLabel("Phone:");
+        phoneLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        phoneLabel.setBounds(50, 210, 100, 20);
+        rightPanel.add(phoneLabel);
+
+        phoneField = new JTextField();
+        phoneField.setFont(new Font("Arial", Font.PLAIN, 12));
+        phoneField.setBounds(50, 232, 350, 30);
+        phoneField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(phoneField);
+
+        // Email
+        JLabel emailLabel = new JLabel("Email:");
+        emailLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        emailLabel.setBounds(50, 270, 100, 20);
+        rightPanel.add(emailLabel);
+
+        emailField = new JTextField();
+        emailField.setFont(new Font("Arial", Font.PLAIN, 12));
+        emailField.setBounds(50, 292, 350, 30);
+        emailField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(emailField);
+
+        // Username
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        usernameLabel.setBounds(50, 330, 100, 20);
+        rightPanel.add(usernameLabel);
+
+        usernameField = new JTextField();
+        usernameField.setFont(new Font("Arial", Font.PLAIN, 12));
+        usernameField.setBounds(50, 352, 350, 30);
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(usernameField);
+
+        // Password
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        passwordLabel.setBounds(50, 390, 100, 20);
+        rightPanel.add(passwordLabel);
+
+        passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Arial", Font.PLAIN, 12));
+        passwordField.setBounds(50, 412, 350, 30);
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(passwordField);
+
+        // Confirm Password
+        JLabel confirmPasswordLabel = new JLabel("Confirm Password:");
+        confirmPasswordLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        confirmPasswordLabel.setBounds(50, 450, 150, 20);
+        rightPanel.add(confirmPasswordLabel);
+
+        confirmPasswordField = new JPasswordField();
+        confirmPasswordField.setFont(new Font("Arial", Font.PLAIN, 12));
+        confirmPasswordField.setBounds(50, 472, 350, 30);
+        confirmPasswordField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(confirmPasswordField);
+
+        registerButton = new JButton("Register");
+        registerButton.setFont(new Font("Arial", Font.BOLD, 16));
+        registerButton.setBounds(50, 520, 350, 35);
+        registerButton.setBackground(new Color(46, 204, 113));
+        registerButton.setForeground(Color.WHITE);
+        registerButton.setFocusPainted(false);
+        registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        registerButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                handleRegister();
+            }
         });
+        rightPanel.add(registerButton);
 
-        card.add(new JLabel("First Name")); card.add(fName);
-        card.add(new JLabel("Last Name")); card.add(lName);
-        card.add(new JLabel("Phone")); card.add(phone);
-        card.add(new JLabel("Email")); card.add(email);
-        card.add(new JLabel("Username")); card.add(user);
-        card.add(new JLabel("Password")); card.add(pass);
-        card.add(new JLabel("Confirm Password")); card.add(confirm);
-        card.add(register); card.add(back);
+        JLabel alreadyUserLabel = new JLabel("Already a user?");
+        alreadyUserLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        alreadyUserLabel.setBounds(130, 565, 100, 25);
+        rightPanel.add(alreadyUserLabel);
 
-        right.add(card);
+        loginLabel = new JLabel("Login");
+        loginLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        loginLabel.setForeground(new Color(46, 204, 113));
+        loginLabel.setBounds(230, 565, 60, 25);
+        loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        loginLabel.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                openLoginPage();
+            }
+        });
+        rightPanel.add(loginLabel);
 
-        add(left, BorderLayout.WEST);
-        add(right, BorderLayout.CENTER);
-        setVisible(true);
+        mainPanel.add(leftPanel);
+        mainPanel.add(rightPanel);
+
+        add(mainPanel);
     }
 
-    void register() {
-        if (fName.getText().trim().isEmpty() || lName.getText().trim().isEmpty() ||
-                phone.getText().trim().isEmpty() || email.getText().trim().isEmpty() ||
-                user.getText().trim().isEmpty() || pass.getPassword().length == 0 ||
-                confirm.getPassword().length == 0) {
-            JOptionPane.showMessageDialog(this, "All fields are required");
+    private void handleRegister() {
+        String firstname = firstnameField.getText().trim();
+        String lastname = lastnameField.getText().trim();
+        String phone = phoneField.getText().trim();
+        String email = emailField.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        String confirmPassword = new String(confirmPasswordField.getPassword());
+
+        // Validation
+        if (firstname.isEmpty() || lastname.isEmpty() || email.isEmpty() ||
+                username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill in all required fields!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        if (!String.valueOf(pass.getPassword())
-                .equals(String.valueOf(confirm.getPassword()))) {
-            JOptionPane.showMessageDialog(this, "Passwords do not match");
+        if (!password.equals(confirmPassword)) {
+            JOptionPane.showMessageDialog(this, "Password and Confirm Password do not match!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO users(firstname,lastname,phone,email,username,password) VALUES(?,?,?,?,?,?)"
-            );
-            ps.setString(1, fName.getText().trim());
-            ps.setString(2, lName.getText().trim());
-            ps.setString(3, phone.getText().trim());
-            ps.setString(4, email.getText().trim());
-            ps.setString(5, user.getText().trim());
-            ps.setString(6, String.valueOf(pass.getPassword()));
-            ps.executeUpdate();
+        // Insert into database
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = "INSERT INTO users (firstname, lastname, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, firstname);
+            pstmt.setString(2, lastname);
+            pstmt.setString(3, phone);
+            pstmt.setString(4, email);
+            pstmt.setString(5, username);
+            pstmt.setString(6, password);
 
-            JOptionPane.showMessageDialog(this, "Account created!");
-            dispose();
-            new LoginPage();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "User or email already exists");
+            int result = pstmt.executeUpdate();
+
+            if (result > 0) {
+                JOptionPane.showMessageDialog(this, "Registration Successful! Please login.",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+                openLoginPage();
+            }
+        } catch (SQLException ex) {
+            if (ex.getMessage().contains("Duplicate entry")) {
+                JOptionPane.showMessageDialog(this, "Username or Email already exists!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
-    JButton link(String s) {
-        JButton b = new JButton(s);
-        b.setBorderPainted(false);
-        b.setContentAreaFilled(false);
-        b.setForeground(UITheme.primary);
-        return b;
+    private void openLoginPage() {
+        new LoginPage().setVisible(true);
+        dispose();
     }
 }

@@ -1,137 +1,148 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.sql.*;
-import icons.UITheme;
-public class LoginPage extends JFrame {
 
-    JTextField txtUser;
-    JPasswordField txtPass;
+public class LoginPage extends JFrame {
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JButton loginButton;
+    private JLabel registerLabel;
 
     public LoginPage() {
         setTitle("Login");
-        setSize(700, 420);
+        setSize(900, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setResizable(false);
 
-        // Left branding panel
-        JPanel left = new JPanel();
-        left.setBackground(UITheme.primary);
-        left.setPreferredSize(new Dimension(280, 0));
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        // Main panel with GridLayout for two panels
+        JPanel mainPanel = new JPanel(new GridLayout(1, 2));
 
-        JLabel app = new JLabel("MyApp");
-        app.setForeground(Color.WHITE);
-        app.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        app.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Left Panel - Welcome Section
+        JPanel leftPanel = new JPanel();
+        leftPanel.setBackground(new Color(41, 128, 185));
+        leftPanel.setLayout(new GridBagLayout());
 
-        JLabel tagline = new JLabel("Secure Login System");
-        tagline.setForeground(Color.WHITE);
-        tagline.setFont(UITheme.normalFont);
-        tagline.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel welcomeLabel = new JLabel("Welcome Back!");
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 36));
+        welcomeLabel.setForeground(Color.WHITE);
 
-        left.add(Box.createVerticalGlue());
-        left.add(app);
-        left.add(Box.createVerticalStrut(10));
-        left.add(tagline);
-        left.add(Box.createVerticalGlue());
+        leftPanel.add(welcomeLabel);
 
-        // Right form panel
-        JPanel right = new JPanel(new GridBagLayout());
-        right.setBackground(UITheme.bgColor);
+        // Right Panel - Form Section
+        JPanel rightPanel = new JPanel();
+        rightPanel.setBackground(Color.WHITE);
+        rightPanel.setLayout(null);
 
-        JPanel card = new JPanel();
-        card.setBackground(Color.WHITE);
-        card.setPreferredSize(new Dimension(320, 280));
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(BorderFactory.createEmptyBorder(25, 30, 25, 30));
+        JLabel titleLabel = new JLabel("Login");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        titleLabel.setBounds(150, 80, 200, 40);
+        rightPanel.add(titleLabel);
 
-        JLabel title = new JLabel("Welcome Back");
-        title.setFont(UITheme.titleFont);
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        usernameLabel.setBounds(50, 180, 100, 25);
+        rightPanel.add(usernameLabel);
 
-        txtUser = input();
-        txtPass = password();
+        usernameField = new JTextField();
+        usernameField.setFont(new Font("Arial", Font.PLAIN, 14));
+        usernameField.setBounds(50, 210, 350, 35);
+        usernameField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(usernameField);
 
-        JButton login = UITheme.styledButton("Login");
-        JButton register = link("Create new account");
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        passwordLabel.setBounds(50, 260, 100, 25);
+        rightPanel.add(passwordLabel);
 
-        login.addActionListener(e -> login());
-        register.addActionListener(e -> {
-            dispose();
-            new RegisterPage();
+        passwordField = new JPasswordField();
+        passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
+        passwordField.setBounds(50, 290, 350, 35);
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        rightPanel.add(passwordField);
+
+        loginButton = new JButton("Login");
+        loginButton.setFont(new Font("Arial", Font.BOLD, 16));
+        loginButton.setBounds(50, 360, 350, 40);
+        loginButton.setBackground(new Color(41, 128, 185));
+        loginButton.setForeground(Color.WHITE);
+        loginButton.setFocusPainted(false);
+        loginButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        loginButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                handleLogin();
+            }
         });
+        rightPanel.add(loginButton);
 
-        card.add(title);
-        card.add(Box.createVerticalStrut(20));
-        card.add(label("Email"));
-        card.add(txtUser);
-        card.add(Box.createVerticalStrut(10));
-        card.add(label("Password"));
-        card.add(txtPass);
-        card.add(Box.createVerticalStrut(20));
-        card.add(login);
-        card.add(Box.createVerticalStrut(10));
-        card.add(register);
+        JLabel notUserLabel = new JLabel("Not a user?");
+        notUserLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        notUserLabel.setBounds(140, 420, 80, 25);
+        rightPanel.add(notUserLabel);
 
-        right.add(card);
+        registerLabel = new JLabel("Register");
+        registerLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        registerLabel.setForeground(new Color(41, 128, 185));
+        registerLabel.setBounds(220, 420, 80, 25);
+        registerLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        registerLabel.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                openRegisterPage();
+            }
+        });
+        rightPanel.add(registerLabel);
 
-        add(left, BorderLayout.WEST);
-        add(right, BorderLayout.CENTER);
+        mainPanel.add(leftPanel);
+        mainPanel.add(rightPanel);
+
+        add(mainPanel);
         setVisible(true);
     }
 
-    void login() {
-        try {
-            Connection con = DBConnection.getConnection();
-            PreparedStatement ps = con.prepareStatement(
-                    "SELECT * FROM users WHERE email=? AND password=?"
-            );
-            ps.setString(1, txtUser.getText());
-            ps.setString(2, String.valueOf(txtPass.getPassword()));
+    private void handleLogin() {
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
 
-            ResultSet rs = ps.executeQuery();
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill in all fields!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+
+            ResultSet rs = pstmt.executeQuery();
+
             if (rs.next()) {
-                // Print all column names to help debug
-                ResultSetMetaData metaData = rs.getMetaData();
-                System.out.println("Available columns:");
-                for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    System.out.println(metaData.getColumnName(i));
-                }
+                JOptionPane.showMessageDialog(this, "Login Successful!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
 
-                // Try to get the first text column for the name
-                String userName = rs.getString(1); // Get first column
+                // Open dashboard
+                int userId = rs.getInt("id");
+                new DashboardPage(userId).setVisible(true);
                 dispose();
-                new DashboardPage(userName);
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid credentials");
+                JOptionPane.showMessageDialog(this, "Invalid username or password!",
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    JTextField input() {
-        JTextField t = new JTextField();
-        t.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        return t;
+    private void openRegisterPage() {
+        new RegisterPage().setVisible(true);
+        dispose();
     }
 
-    JPasswordField password() {
-        JPasswordField p = new JPasswordField();
-        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        return p;
-    }
-
-    JLabel label(String s) {
-        return new JLabel(s);
-    }
-
-    JButton link(String s) {
-        JButton b = new JButton(s);
-        b.setBorderPainted(false);
-        b.setContentAreaFilled(false);
-        b.setForeground(UITheme.primary);
-        return b;
-    }
 }
