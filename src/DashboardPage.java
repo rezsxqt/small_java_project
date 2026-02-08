@@ -7,208 +7,243 @@ import java.nio.file.*;
 
 public class DashboardPage extends JFrame {
     private int userId;
-    private JLabel photoLabel;
-    private JLabel firstnameDisplay, lastnameDisplay, phoneDisplay, emailDisplay, usernameDisplay;
-    private String currentPhotoPath = null;
+    private String userFirstname;
+    private String userLastname;
+    private String userPhotoPath;  // Store photo path
 
     public DashboardPage(int userId) {
-        this.userId = userId;
+        this.userId = userId;  // Store the logged-in user's ID
 
+        // Load user's name first
+        loadUserName();
+
+        // === WINDOW SETUP ===
         setTitle("Dashboard");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setLocationRelativeTo(null);  // Center on screen
         setResizable(false);
+
+        // === CREATE MENU BAR ===
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setBackground(new Color(52, 73, 94));
+        menuBar.setPreferredSize(new Dimension(900, 40));
+
+        // Dashboard Menu
+        JMenu dashboardMenu = createStyledMenu("Dashboard");
+        JMenuItem homeItem = createStyledMenuItem("Home");
+        homeItem.addActionListener(e -> showWelcomeScreen());
+        dashboardMenu.add(homeItem);
+
+        // Account Menu
+        JMenu accountMenu = createStyledMenu("Account");
+        JMenuItem accountDetailsItem = createStyledMenuItem("Account Details");
+        accountDetailsItem.addActionListener(e -> openAccountDetails());
+        JMenuItem editDetailsItem = createStyledMenuItem("Edit Details");
+        editDetailsItem.addActionListener(e -> openEditDialog());
+        JMenuItem deleteAccountItem = createStyledMenuItem("Delete Account");
+        deleteAccountItem.addActionListener(e -> deleteAccount());
+        accountMenu.add(accountDetailsItem);
+        accountMenu.add(editDetailsItem);
+        accountMenu.addSeparator();
+        accountMenu.add(deleteAccountItem);
+
+        // Logout Menu
+        JMenu logoutMenu = createStyledMenu("Logout");
+        logoutMenu.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                logout();
+            }
+        });
+
+        menuBar.add(dashboardMenu);
+        menuBar.add(accountMenu);
+        menuBar.add(Box.createHorizontalGlue()); // Push logout to right
+        menuBar.add(logoutMenu);
+
+        setJMenuBar(menuBar);
+
+        // === MAIN CONTENT - WELCOME SCREEN ===
+        showWelcomeScreen();
+    }
+
+    /**
+     * Create styled menu for menu bar
+     */
+    private JMenu createStyledMenu(String text) {
+        JMenu menu = new JMenu(text);
+        menu.setForeground(Color.WHITE);
+        menu.setFont(new Font("Arial", Font.BOLD, 14));
+        return menu;
+    }
+
+    /**
+     * Create styled menu item
+     */
+    private JMenuItem createStyledMenuItem(String text) {
+        JMenuItem item = new JMenuItem(text);
+        item.setFont(new Font("Arial", Font.PLAIN, 13));
+        return item;
+    }
+
+    /**
+     * Show welcome screen (main dashboard view)
+     */
+    private void showWelcomeScreen() {
+        // Clear current content
+        getContentPane().removeAll();
 
         // Main panel with GridLayout for two panels
         JPanel mainPanel = new JPanel(new GridLayout(1, 2));
 
-        // Left Panel - Profile Section
+        // === LEFT PANEL - PROFILE PHOTO SECTION ===
         JPanel leftPanel = new JPanel();
-        leftPanel.setBackground(new Color(52, 152, 219));
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setBackground(new Color(52, 152, 219));  // Blue color
+        leftPanel.setLayout(new GridBagLayout());  // Centers content
 
-        leftPanel.add(Box.createVerticalStrut(80));
+        // Create a container for photo and label
+        JPanel photoContainer = new JPanel();
+        photoContainer.setLayout(new BoxLayout(photoContainer, BoxLayout.Y_AXIS));
+        photoContainer.setBackground(new Color(52, 152, 219));
 
-        // Photo display
-        photoLabel = new JLabel();
+        // Profile Photo Label
+        JLabel photoLabel = new JLabel();
         photoLabel.setPreferredSize(new Dimension(150, 150));
         photoLabel.setMaximumSize(new Dimension(150, 150));
+        photoLabel.setMinimumSize(new Dimension(150, 150));
         photoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         photoLabel.setBorder(BorderFactory.createLineBorder(Color.WHITE, 3));
         photoLabel.setOpaque(true);
         photoLabel.setBackground(Color.WHITE);
         photoLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        leftPanel.add(photoLabel);
 
-        leftPanel.add(Box.createVerticalStrut(20));
+        // Load and display photo
+        if (userPhotoPath != null && !userPhotoPath.isEmpty()) {
+            File photoFile = new File(userPhotoPath);
+            if (photoFile.exists()) {
+                try {
+                    ImageIcon icon = new ImageIcon(userPhotoPath);
+                    Image image = icon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                    photoLabel.setIcon(new ImageIcon(image));
+                } catch (Exception e) {
+                    // If image loading fails, show default
+                    photoLabel.setText("👤");
+                    photoLabel.setFont(new Font("Arial", Font.PLAIN, 60));
+                }
+            } else {
+                // Photo file doesn't exist
+                photoLabel.setText("👤");
+                photoLabel.setFont(new Font("Arial", Font.PLAIN, 60));
+            }
+        } else {
+            // No photo path in database
+            photoLabel.setText("👤");
+            photoLabel.setFont(new Font("Arial", Font.PLAIN, 60));
+        }
 
+        photoContainer.add(photoLabel);
+        photoContainer.add(Box.createVerticalStrut(20));
+
+        // "User Profile" label below photo
         JLabel profileLabel = new JLabel("User Profile");
-        profileLabel.setFont(new Font("Arial", Font.BOLD, 28));
+        profileLabel.setFont(new Font("Arial", Font.BOLD, 20));
         profileLabel.setForeground(Color.WHITE);
         profileLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        leftPanel.add(profileLabel);
+        photoContainer.add(profileLabel);
 
-        // Right Panel - Details Section
+        leftPanel.add(photoContainer);
+
+        // === RIGHT PANEL - WELCOME MESSAGE ===
         JPanel rightPanel = new JPanel();
         rightPanel.setBackground(Color.WHITE);
-        rightPanel.setLayout(null);
+        rightPanel.setLayout(new GridBagLayout());
 
-        JLabel titleLabel = new JLabel("Dashboard");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
-        titleLabel.setBounds(150, 40, 200, 40);
-        rightPanel.add(titleLabel);
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBackground(Color.WHITE);
 
-        // Display fields
-        int yPos = 120;
+        JLabel welcomeText = new JLabel("Welcome Back");
+        welcomeText.setFont(new Font("Arial", Font.BOLD, 36));
+        welcomeText.setForeground(new Color(52, 73, 94));
+        welcomeText.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel fnLabel = new JLabel("First Name:");
-        fnLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        fnLabel.setBounds(50, yPos, 120, 25);
-        rightPanel.add(fnLabel);
+        JLabel nameText = new JLabel(userFirstname + " " + userLastname);
+        nameText.setFont(new Font("Arial", Font.BOLD, 42));
+        nameText.setForeground(new Color(52, 152, 219));
+        nameText.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        firstnameDisplay = new JLabel();
-        firstnameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
-        firstnameDisplay.setBounds(170, yPos, 250, 25);
-        rightPanel.add(firstnameDisplay);
+        centerPanel.add(welcomeText);
+        centerPanel.add(Box.createVerticalStrut(20));
+        centerPanel.add(nameText);
 
-        yPos += 40;
-
-        JLabel lnLabel = new JLabel("Last Name:");
-        lnLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        lnLabel.setBounds(50, yPos, 120, 25);
-        rightPanel.add(lnLabel);
-
-        lastnameDisplay = new JLabel();
-        lastnameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
-        lastnameDisplay.setBounds(170, yPos, 250, 25);
-        rightPanel.add(lastnameDisplay);
-
-        yPos += 40;
-
-        JLabel phLabel = new JLabel("Phone:");
-        phLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        phLabel.setBounds(50, yPos, 120, 25);
-        rightPanel.add(phLabel);
-
-        phoneDisplay = new JLabel();
-        phoneDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
-        phoneDisplay.setBounds(170, yPos, 250, 25);
-        rightPanel.add(phoneDisplay);
-
-        yPos += 40;
-
-        JLabel emLabel = new JLabel("Email:");
-        emLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        emLabel.setBounds(50, yPos, 120, 25);
-        rightPanel.add(emLabel);
-
-        emailDisplay = new JLabel();
-        emailDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
-        emailDisplay.setBounds(170, yPos, 250, 25);
-        rightPanel.add(emailDisplay);
-
-        yPos += 40;
-
-        JLabel unLabel = new JLabel("Username:");
-        unLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        unLabel.setBounds(50, yPos, 120, 25);
-        rightPanel.add(unLabel);
-
-        usernameDisplay = new JLabel();
-        usernameDisplay.setFont(new Font("Arial", Font.PLAIN, 14));
-        usernameDisplay.setBounds(170, yPos, 250, 25);
-        rightPanel.add(usernameDisplay);
-
-        // Buttons
-        JButton editButton = new JButton("Edit Details");
-        editButton.setFont(new Font("Arial", Font.BOLD, 14));
-        editButton.setBounds(50, 400, 160, 35);
-        editButton.setBackground(new Color(52, 152, 219));
-        editButton.setForeground(Color.WHITE);
-        editButton.setFocusPainted(false);
-        editButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        editButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openEditDialog();
-            }
-        });
-        rightPanel.add(editButton);
-
-        JButton deleteButton = new JButton("Delete Account");
-        deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
-        deleteButton.setBounds(240, 400, 160, 35);
-        deleteButton.setBackground(new Color(231, 76, 60));
-        deleteButton.setForeground(Color.WHITE);
-        deleteButton.setFocusPainted(false);
-        deleteButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        deleteButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                deleteAccount();
-            }
-        });
-        rightPanel.add(deleteButton);
-
-        JButton logoutButton = new JButton("Logout");
-        logoutButton.setFont(new Font("Arial", Font.BOLD, 14));
-        logoutButton.setBounds(145, 455, 160, 35);
-        logoutButton.setBackground(new Color(149, 165, 166));
-        logoutButton.setForeground(Color.WHITE);
-        logoutButton.setFocusPainted(false);
-        logoutButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        logoutButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                logout();
-            }
-        });
-        rightPanel.add(logoutButton);
+        rightPanel.add(centerPanel);
 
         mainPanel.add(leftPanel);
         mainPanel.add(rightPanel);
 
         add(mainPanel);
-
-        // Load user data
-        loadUserData();
+        revalidate();
+        repaint();
     }
 
-    private void loadUserData() {
+    /**
+     * Load user's first name, last name, and photo from database
+     */
+    private void loadUserName() {
         try (Connection conn = DBConnection.getConnection()) {
-            String query = "SELECT * FROM users WHERE id = ?";
+            String query = "SELECT firstname, lastname, photo FROM users WHERE id = ?";
             PreparedStatement pstmt = conn.prepareStatement(query);
             pstmt.setInt(1, userId);
 
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                firstnameDisplay.setText(rs.getString("firstname"));
-                lastnameDisplay.setText(rs.getString("lastname"));
-                phoneDisplay.setText(rs.getString("phone"));
-                emailDisplay.setText(rs.getString("email"));
-                usernameDisplay.setText(rs.getString("username"));
-                currentPhotoPath = rs.getString("photo");
-
-                // Load photo if exists
-                if (currentPhotoPath != null && !currentPhotoPath.isEmpty()) {
-                    File photoFile = new File(currentPhotoPath);
-                    if (photoFile.exists()) {
-                        ImageIcon icon = new ImageIcon(currentPhotoPath);
-                        Image image = icon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
-                        photoLabel.setIcon(new ImageIcon(image));
-                    } else {
-                        photoLabel.setText("No Photo");
-                    }
-                } else {
-                    photoLabel.setText("No Photo");
-                }
+                userFirstname = rs.getString("firstname");
+                userLastname = rs.getString("lastname");
+                userPhotoPath = rs.getString("photo");  // Load photo path
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading user data: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            userFirstname = "User";
+            userLastname = "";
+            userPhotoPath = null;
         }
     }
 
+    /**
+     * Open Account Details page
+     */
+    private void openAccountDetails() {
+        new AccountDetailsPage(userId).setVisible(true);
+        dispose();
+    }
+
+    /**
+     * Open edit details dialog
+     */
     private void openEditDialog() {
+        // Load current user data first
+        String currentFirstname = "", currentLastname = "", currentPhone = "";
+        String currentEmail = "", currentUsername = "", currentPhotoPath = "";
+
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = "SELECT * FROM users WHERE id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                currentFirstname = rs.getString("firstname");
+                currentLastname = rs.getString("lastname");
+                currentPhone = rs.getString("phone");
+                currentEmail = rs.getString("email");
+                currentUsername = rs.getString("username");
+                currentPhotoPath = rs.getString("photo");
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading user data", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         JDialog editDialog = new JDialog(this, "Edit Details", true);
         editDialog.setSize(500, 600);
         editDialog.setLocationRelativeTo(this);
@@ -225,7 +260,7 @@ public class DashboardPage extends JFrame {
         fnLabel.setBounds(50, yPos, 100, 25);
         editDialog.add(fnLabel);
 
-        JTextField fnField = new JTextField(firstnameDisplay.getText());
+        JTextField fnField = new JTextField(currentFirstname);
         fnField.setBounds(150, yPos, 300, 30);
         editDialog.add(fnField);
 
@@ -235,7 +270,7 @@ public class DashboardPage extends JFrame {
         lnLabel.setBounds(50, yPos, 100, 25);
         editDialog.add(lnLabel);
 
-        JTextField lnField = new JTextField(lastnameDisplay.getText());
+        JTextField lnField = new JTextField(currentLastname);
         lnField.setBounds(150, yPos, 300, 30);
         editDialog.add(lnField);
 
@@ -245,7 +280,7 @@ public class DashboardPage extends JFrame {
         phLabel.setBounds(50, yPos, 100, 25);
         editDialog.add(phLabel);
 
-        JTextField phField = new JTextField(phoneDisplay.getText());
+        JTextField phField = new JTextField(currentPhone);
         phField.setBounds(150, yPos, 300, 30);
         editDialog.add(phField);
 
@@ -255,7 +290,7 @@ public class DashboardPage extends JFrame {
         emLabel.setBounds(50, yPos, 100, 25);
         editDialog.add(emLabel);
 
-        JTextField emField = new JTextField(emailDisplay.getText());
+        JTextField emField = new JTextField(currentEmail);
         emField.setBounds(150, yPos, 300, 30);
         editDialog.add(emField);
 
@@ -265,7 +300,7 @@ public class DashboardPage extends JFrame {
         unLabel.setBounds(50, yPos, 100, 25);
         editDialog.add(unLabel);
 
-        JTextField unField = new JTextField(usernameDisplay.getText());
+        JTextField unField = new JTextField(currentUsername);
         unField.setBounds(150, yPos, 300, 30);
         editDialog.add(unField);
 
@@ -309,6 +344,7 @@ public class DashboardPage extends JFrame {
         saveButton.setBounds(100, yPos, 140, 35);
         saveButton.setBackground(new Color(52, 152, 219));
         saveButton.setForeground(Color.WHITE);
+        String finalCurrentPhotoPath = currentPhotoPath;
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String firstname = fnField.getText().trim();
@@ -329,7 +365,6 @@ public class DashboardPage extends JFrame {
                     PreparedStatement pstmt;
 
                     if (password.isEmpty()) {
-                        // Update without password
                         query = "UPDATE users SET firstname=?, lastname=?, phone=?, email=?, username=?, photo=? WHERE id=?";
                         pstmt = conn.prepareStatement(query);
                         pstmt.setString(1, firstname);
@@ -337,10 +372,9 @@ public class DashboardPage extends JFrame {
                         pstmt.setString(3, phone);
                         pstmt.setString(4, email);
                         pstmt.setString(5, username);
-                        pstmt.setString(6, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : currentPhotoPath);
+                        pstmt.setString(6, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : finalCurrentPhotoPath);
                         pstmt.setInt(7, userId);
                     } else {
-                        // Update with password
                         query = "UPDATE users SET firstname=?, lastname=?, phone=?, email=?, username=?, password=?, photo=? WHERE id=?";
                         pstmt = conn.prepareStatement(query);
                         pstmt.setString(1, firstname);
@@ -349,7 +383,7 @@ public class DashboardPage extends JFrame {
                         pstmt.setString(4, email);
                         pstmt.setString(5, username);
                         pstmt.setString(6, password);
-                        pstmt.setString(7, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : currentPhotoPath);
+                        pstmt.setString(7, selectedPhotoPath[0] != null ? selectedPhotoPath[0] : finalCurrentPhotoPath);
                         pstmt.setInt(8, userId);
                     }
 
@@ -358,7 +392,8 @@ public class DashboardPage extends JFrame {
                     if (result > 0) {
                         JOptionPane.showMessageDialog(editDialog, "Details updated successfully!",
                                 "Success", JOptionPane.INFORMATION_MESSAGE);
-                        loadUserData();
+                        loadUserName();
+                        showWelcomeScreen();
                         editDialog.dispose();
                     }
                 } catch (SQLException ex) {
@@ -383,39 +418,59 @@ public class DashboardPage extends JFrame {
         editDialog.setVisible(true);
     }
 
+    /**
+     * Delete user account from database
+     */
     private void deleteAccount() {
+        // STEP 1: Ask for confirmation
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to delete your account? This action cannot be undone!",
-                "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
+        // STEP 2: If user confirms, delete from database
         if (confirm == JOptionPane.YES_OPTION) {
             try (Connection conn = DBConnection.getConnection()) {
+                // SQL query to delete user
                 String query = "DELETE FROM users WHERE id = ?";
                 PreparedStatement pstmt = conn.prepareStatement(query);
-                pstmt.setInt(1, userId);
+                pstmt.setInt(1, userId);  // Set the user ID to delete
 
                 int result = pstmt.executeUpdate();
 
+                // STEP 3: If deleted successfully, return to login
                 if (result > 0) {
-                    JOptionPane.showMessageDialog(this, "Account deleted successfully!",
-                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this,
+                            "Account deleted successfully!",
+                            "Success",
+                            JOptionPane.INFORMATION_MESSAGE);
                     new LoginPage().setVisible(true);
-                    dispose();
+                    dispose();  // Close dashboard
                 }
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error deleting account: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Error deleting account: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
+    /**
+     * Logout and return to login page
+     */
     private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?",
-                "Confirm Logout", JOptionPane.YES_NO_OPTION);
+        // Ask for confirmation
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION);
 
+        // If confirmed, go to login page
         if (confirm == JOptionPane.YES_OPTION) {
             new LoginPage().setVisible(true);
-            dispose();
+            dispose();  // Close dashboard
         }
     }
 }

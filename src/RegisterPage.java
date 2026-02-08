@@ -21,7 +21,7 @@ public class RegisterPage extends JFrame {
 
         // Left Panel - Welcome Section
         JPanel leftPanel = new JPanel();
-        leftPanel.setBackground(new Color(46, 204, 113));
+        leftPanel.setBackground(new Color(41, 128, 185));
         leftPanel.setLayout(new GridBagLayout());
 
         JLabel welcomeLabel = new JLabel("<html><center>Join Us<br>Today!</center></html>");
@@ -141,7 +141,7 @@ public class RegisterPage extends JFrame {
         registerButton = new JButton("Register");
         registerButton.setFont(new Font("Arial", Font.BOLD, 16));
         registerButton.setBounds(50, 520, 350, 35);
-        registerButton.setBackground(new Color(46, 204, 113));
+        registerButton.setBackground(new Color(41, 128, 185));
         registerButton.setForeground(Color.WHITE);
         registerButton.setFocusPainted(false);
         registerButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -159,7 +159,7 @@ public class RegisterPage extends JFrame {
 
         loginLabel = new JLabel("Login");
         loginLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        loginLabel.setForeground(new Color(46, 204, 113));
+        loginLabel.setForeground(new Color(41, 128, 185));
         loginLabel.setBounds(230, 565, 60, 25);
         loginLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         loginLabel.addMouseListener(new MouseAdapter() {
@@ -193,7 +193,7 @@ public class RegisterPage extends JFrame {
         }
 
         if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(this, "Password and Confirm Password do not match!",
+            JOptionPane.showMessageDialog(this, "Passwords do not match!",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }

@@ -40,9 +40,9 @@ public class LoginPage extends JFrame {
         titleLabel.setBounds(150, 80, 200, 40);
         rightPanel.add(titleLabel);
 
-        JLabel usernameLabel = new JLabel("Username:");
+        JLabel usernameLabel = new JLabel("Username/Email:");
         usernameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        usernameLabel.setBounds(50, 180, 100, 25);
+        usernameLabel.setBounds(50, 180, 150, 25);
         rightPanel.add(usernameLabel);
 
         usernameField = new JTextField();
@@ -104,20 +104,21 @@ public class LoginPage extends JFrame {
     }
 
     private void handleLogin() {
-        String username = usernameField.getText().trim();
+        String usernameORemail = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
 
-        if (username.isEmpty() || password.isEmpty()) {
+        if (usernameORemail.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill in all fields!",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try (Connection conn = DBConnection.getConnection()) {
-            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            String query = "SELECT * FROM users WHERE (username = ? OR email = ?) AND password = ?";
             PreparedStatement pstmt = conn.prepareStatement(query);
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
+            pstmt.setString(1, usernameORemail);
+            pstmt.setString(2,usernameORemail);
+            pstmt.setString(3, password);
 
             ResultSet rs = pstmt.executeQuery();
 
